@@ -1,0 +1,139 @@
+import numpy as np
+import time
+from multiprocessing import Pool
+import matplotlib.pyplot as plt
+
+#Serial operations
+def matrix_add_serial(A, B):
+    return A + B
+
+def matrix_sub_serial(A, B):
+    return A - B
+
+def matrix_mult_serial(A, B):
+    return np.dot(A, B)
+
+#Parallel matrix functions
+def add_rows(row, B_row):
+    return row + B_row
+
+def sub_rows(row, B_row):
+    return row - B_row
+
+def mult_row(row, B):
+    return np.dot(row, B)
+
+#Parallel matrix operations
+def matrix_add_parallel(A, B):
+    with Pool() as pool:
+        result = pool.starmap(add_rows, [(A[i, :], B[i, :]) for i in range(A.shape[0])])
+    return np.array(result)
+
+def matrix_sub_parallel(A, B):
+    with Pool() as pool:
+        result = pool.starmap(sub_rows, [(A[i, :], B[i, :]) for i in range(A.shape[0])])
+    return np.array(result)
+
+def matrix_mult_parallel(A, B):
+    with Pool() as pool:
+        result = pool.starmap(mult_row, [(A[i, :], B) for i in range(A.shape[0])])
+    return np.array(result)
+
+#Function to measure performance (serial and parallel matrix operations)
+def measure_performance(matrix_size):
+    A = np.random.rand(matrix_size, matrix_size)
+    B = np.random.rand(matrix_size, matrix_size)
+
+    timings = {}
+
+    #Serial Addition
+    start_time = time.time()
+    matrix_add_serial(A, B)
+    timings['serial_add'] = time.time() - start_time
+
+    #Parallel Addition
+    start_time = time.time()
+    matrix_add_parallel(A, B)
+    timings['parallel_add'] = time.time() - start_time
+
+    #Serial Subtraction
+    start_time = time.time()
+    matrix_sub_serial(A, B)
+    timings['serial_subtract'] = time.time() - start_time
+
+    #Parallel Subtraction
+    start_time = time.time()
+    matrix_sub_parallel(A, B)
+    timings['parallel_subtract'] = time.time() - start_time
+
+    #Serial Multiplication
+    start_time = time.time()
+    matrix_mult_serial(A, B)
+    timings['serial_multiply'] = time.time() - start_time
+
+    #Parallel Multiplication
+    start_time = time.time()
+    matrix_mult_parallel(A, B)
+    timings['parallel_multiply'] = time.time() - start_time
+
+    return timings
+
+matrix_sizes = [100, 500, 1000, 1500, 2000]
+results = []
+
+for size in matrix_sizes:
+    performance = measure_performance(size)
+    results.append((size, performance))
+
+
+for size, timing in results:
+    print(f"Matrix Size: {size}x{size}")
+    print(f"Serial Addition Time: {timing['serial_add']:.6f} seconds")
+    print(f"Parallel Addition Time: {timing['parallel_add']:.6f} seconds")
+    print(f"Serial Subtraction Time: {timing['serial_subtract']:.6f} seconds")
+    print(f"Parallel Subtraction Time: {timing['parallel_subtract']:.6f} seconds")
+    print(f"Serial Multiplication Time: {timing['serial_multiply']:.6f} seconds")
+    print(f"Parallel Multiplication Time: {timing['parallel_multiply']:.6f} seconds")
+    print("-" * 50)
+
+#Extracting data for plotting on chart
+matrix_labels = [str(size) for size in matrix_sizes]
+serial_add_times = [result[1]['serial_add'] for result in results]
+parallel_add_times = [result[1]['parallel_add'] for result in results]
+serial_sub_times = [result[1]['serial_subtract'] for result in results]
+parallel_sub_times = [result[1]['parallel_subtract'] for result in results]
+serial_mult_times = [result[1]['serial_multiply'] for result in results]
+parallel_mult_times = [result[1]['parallel_multiply'] for result in results]
+
+#Plotting results
+plt.figure(figsize=(12, 8))
+
+#Serial vs Parallel Addition
+plt.subplot(3, 1, 1)
+plt.plot(matrix_labels, serial_add_times, label="Serial Addition", marker='o', color='b')
+plt.plot(matrix_labels, parallel_add_times, label="Parallel Addition", marker='o', color='r')
+plt.title("Serial vs Parallel Addition Times")
+plt.xlabel("Matrix Size")
+plt.ylabel("Time (seconds)")
+plt.legend()
+
+#Serial vs Parallel Subtraction
+plt.subplot(3, 1, 2)
+plt.plot(matrix_labels, serial_sub_times, label="Serial Subtraction", marker='o', color='b')
+plt.plot(matrix_labels, parallel_sub_times, label="Parallel Subtraction", marker='o', color='r')
+plt.title("Serial vs Parallel Subtraction Times")
+plt.xlabel("Matrix Size")
+plt.ylabel("Time (seconds)")
+plt.legend()
+
+#Serial vs Parallel Multiplication
+plt.subplot(3, 1, 3)
+plt.plot(matrix_labels, serial_mult_times, label="Serial Multiplication", marker='o', color='b')
+plt.plot(matrix_labels, parallel_mult_times, label="Parallel Multiplication", marker='o', color='r')
+plt.title("Serial vs Parallel Multiplication Times")
+plt.xlabel("Matrix Size")
+plt.ylabel("Time (seconds)")
+plt.legend()
+
+plt.tight_layout()
+plt.show()
